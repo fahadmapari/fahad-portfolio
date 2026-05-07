@@ -1,3 +1,5 @@
+import { useRef, useState } from "react";
+
 const ASCII_NAME = String.raw`
  ███████╗ █████╗ ██╗  ██╗ █████╗ ██████╗     ███╗   ███╗ █████╗ ██████╗  █████╗ ██████╗ ██╗
  ██╔════╝██╔══██╗██║  ██║██╔══██╗██╔══██╗    ████╗ ████║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║
@@ -25,5 +27,32 @@ export const GLITCH_PALETTE = [
 ] as const;
 
 export function AsciiBanner() {
-  return <pre className="ascii-banner">{ASCII_NAME}</pre>;
+  const [hovered, setHovered] = useState(false);
+  const reducedMotionRef = useRef<boolean>(
+    typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+
+  const onEnter = () => {
+    if (reducedMotionRef.current) return;
+    setHovered(true);
+  };
+  const onLeave = () => {
+    if (reducedMotionRef.current) return;
+    setHovered(false);
+  };
+
+  // hovered state will drive the glitch loop in the next task.
+  // For now, we just render the static banner with hover handlers wired up.
+  void hovered;
+
+  return (
+    <pre
+      className="ascii-banner"
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+    >
+      {ASCII_NAME}
+    </pre>
+  );
 }
