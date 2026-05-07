@@ -79,8 +79,11 @@ function App() {
     return () => document.removeEventListener("click", onClick);
   }, []);
 
-  // Track which section is in view, sync nav highlight
+  // Track which section is in view, sync nav highlight.
+  // The .terminal-page is the scroll container, so it must be the IO root.
   useEffect(() => {
+    const root = document.querySelector<HTMLElement>(".terminal-page");
+    if (!root) return;
     const obs = new IntersectionObserver(
       (entries) => {
         const visible = entries
@@ -92,7 +95,7 @@ function App() {
           if (id) setActive(id);
         }
       },
-      { rootMargin: "-20% 0px -60% 0px", threshold: [0.1, 0.3, 0.6] },
+      { root, rootMargin: "-20% 0px -60% 0px", threshold: [0.1, 0.3, 0.6] },
     );
     Object.values(sectionRefs.current).forEach((el) => el && obs.observe(el));
     return () => obs.disconnect();
@@ -100,11 +103,15 @@ function App() {
 
   const scrollTo = (id: SectionId) => {
     const el = sectionRefs.current[id];
-    if (!el) return;
-    const head = document.querySelector<HTMLElement>(".terminal-head");
-    const offset = (head?.offsetHeight ?? 200) + 40;
-    const y = el.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top: y, behavior: "smooth" });
+    const container = document.querySelector<HTMLElement>(".terminal-page");
+    if (!el || !container) return;
+    const head = container.querySelector<HTMLElement>(".terminal-head");
+    const offset = (head?.offsetHeight ?? 200) + 16;
+    const delta = el.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    container.scrollTo({
+      top: container.scrollTop + delta - offset,
+      behavior: "smooth",
+    });
   };
 
   const sectionRender: Record<SectionId, ReactNode> = {
@@ -121,60 +128,60 @@ function App() {
       {booting && <BootSequence onDone={() => setBooting(false)} />}
 
       <div className="crt-bg" aria-hidden="true" />
-      <div className="crt-bezel" aria-hidden="true" />
 
       <main className="terminal-page">
-        <header className="terminal-head">
-          <StatusBar />
-          <AsciiBanner />
+        <div className="terminal-page-inner">
+          <header className="terminal-head">
+            <StatusBar />
+            <AsciiBanner />
 
-          <div style={{ marginTop: 8, marginBottom: 8 }}>
-            <span className="prompt" />
-            <Typewriter
-              text="welcome, operator. this dossier is classified — handle with care."
-              speed={18}
-            />
-          </div>
+            <div style={{ marginTop: 8, marginBottom: 8 }}>
+              <span className="prompt" />
+              <Typewriter
+                text="welcome, operator. this dossier is classified — handle with care."
+                speed={18}
+              />
+            </div>
 
-          <nav className="topnav" role="tablist">
-            {SECTIONS.map((s) => (
-              <button
-                key={s.id}
-                className={active === s.id ? "active" : ""}
-                onClick={() => {
-                  scrollTo(s.id);
-                  beep(900, 0.02, 0.04);
-                }}
-              >
-                <span className="num">{s.num}</span>
-                {s.label}
+            <nav className="topnav" role="tablist">
+              {SECTIONS.map((s) => (
+                <button
+                  key={s.id}
+                  className={active === s.id ? "active" : ""}
+                  onClick={() => {
+                    scrollTo(s.id);
+                    beep(900, 0.02, 0.04);
+                  }}
+                >
+                  <span className="num">{s.num}</span>
+                  {s.label}
+                </button>
+              ))}
+              <button onClick={() => setResumeOpen(true)}>
+                <span className="num">▼</span>RESUME
               </button>
-            ))}
-            <button onClick={() => setResumeOpen(true)}>
-              <span className="num">▼</span>RESUME
-            </button>
-          </nav>
-        </header>
+            </nav>
+          </header>
 
-        {SECTIONS.map((s) => (
-          <div
-            key={s.id}
-            ref={(el) => {
-              sectionRefs.current[s.id] = el;
-            }}
-            data-section-id={s.id}
-            style={{ scrollMarginTop: 100 }}
-          >
-            {sectionRender[s.id]}
+          {SECTIONS.map((s) => (
+            <div
+              key={s.id}
+              ref={(el) => {
+                sectionRefs.current[s.id] = el;
+              }}
+              data-section-id={s.id}
+            >
+              {sectionRender[s.id]}
+            </div>
+          ))}
+
+          <div className="footer">
+            <span>FAHAD MAPARI · FRONTEND ENGINEER · MUMBAI/IN</span>
+            <span>
+              PRESS <span className="hl">`</span> FOR DEBUG SHELL
+            </span>
+            <span>© 2026 · MU-TH-UR 6000</span>
           </div>
-        ))}
-
-        <div className="footer">
-          <span>FAHAD MAPARI · FRONTEND ENGINEER · MUMBAI/IN</span>
-          <span>
-            PRESS <span className="hl">`</span> FOR DEBUG SHELL
-          </span>
-          <span>© 2026 · MU-TH-UR 6000</span>
         </div>
       </main>
 

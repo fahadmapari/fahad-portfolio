@@ -34,35 +34,47 @@ html, body {
   font-family: var(--font);
   font-size: 20px;
   line-height: 1.4;
-  overflow-x: hidden;
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
   -webkit-font-smoothing: none;
   font-smooth: never;
 }
 
-html { scroll-behavior: smooth; }
+#root {
+  isolation: isolate;
+  height: 100%;
+}
 
-#root { isolation: isolate; }
+/* CRT architecture
+   ----------------------------------------------------------------
+   The page itself does NOT scroll. The CRT screen scrolls internally.
+   That gives us a real scroll container, which is what position:sticky
+   needs to bind against, and it physically clips content to the bezel.
 
-/* CRT layers — fixed overlays so sticky content has no hostile ancestors.
-   crt-bg:    outer dark gradient (full viewport)
-   crt-bezel: rounded screen w/ bezel rings + warm outer glow + inset glow
-   crt-fx:    scanlines + flicker + vignette (above content)
-   terminal-page: normal-flow content container that owns scroll
-   ----------------------------------------------------------------- */
+   .crt-bg   — outer dark gradient, fixed full-viewport (z: -1)
+   .terminal-page — the CRT screen: fixed inset:24px, scrolls its own
+                    content, owns bezel rings + outer warm glow + inset
+                    glow, rounded corners clip content to the screen
+   .terminal-page-inner — content frame inside the screen (max-width
+                    + padding + glow text-shadow)
+   .crt-fx   — scanlines + flicker + vignette, fixed inset:24px on top
+                    of the screen, pointer-events:none (z: 50)
+   ---------------------------------------------------------------- */
 .crt-bg {
   position: fixed;
   inset: 0;
-  z-index: -2;
+  z-index: -1;
   background:
     radial-gradient(ellipse at center, #1a0f06 0%, #050300 80%, #000 100%);
   pointer-events: none;
 }
 
-.crt-bezel {
+.terminal-page {
   position: fixed;
   inset: 24px;
-  z-index: -1;
+  z-index: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   background:
     radial-gradient(ellipse at 50% 30%, #1d1308 0%, #0a0604 70%, #050200 100%);
   border-radius: calc(28px * var(--curvature));
@@ -72,7 +84,15 @@ html { scroll-behavior: smooth; }
     0 0 0 2px #2a1a08,
     0 0 0 6px #15100a,
     0 0 60px rgba(255, 122, 24, 0.15);
-  pointer-events: none;
+}
+
+.terminal-page-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 48px 64px;
+  text-shadow:
+    0 0 1px var(--accent-glow),
+    0 0 6px var(--accent-glow);
 }
 
 .crt-fx {
@@ -112,21 +132,10 @@ html { scroll-behavior: smooth; }
   72% { opacity: 0.92; }
 }
 
-.terminal-page {
-  position: relative;
-  z-index: 1;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 56px 72px 72px;
-  text-shadow:
-    0 0 1px var(--accent-glow),
-    0 0 6px var(--accent-glow);
-}
-
 @media (max-width: 900px) {
-  .crt-bezel,
+  .terminal-page,
   .crt-fx { inset: 12px; }
-  .terminal-page { padding: 32px 28px 48px; }
+  .terminal-page-inner { padding: 20px 22px 48px; }
 }
 
 /* Top status bar -------------------------------------------- */
@@ -303,16 +312,16 @@ a:hover {
 .topnav button.active .num { color: var(--bg); opacity: 0.6; }
 
 /* Sticky terminal head — status bar + ASCII banner + welcome + nav.
-   top: 30px lands the head just inside the 24px bezel inset with a small
-   gap of breathing room. No transformed/overflow-hidden ancestors, so
-   position:sticky binds cleanly to the viewport scroll. */
+   Sticks to top:0 of the .terminal-page scroll container. The negative
+   margin / extra padding bleeds the head out to the inner padding edges
+   so the dark backdrop fully obscures content scrolling under it. */
 .terminal-head {
   position: sticky;
-  top: 30px;
+  top: 0;
   z-index: 40;
   background: #0a0604;
-  padding-top: 8px;
-  margin-bottom: 24px;
+  margin: -32px -48px 24px;
+  padding: 24px 48px 0;
   border-bottom: 1px solid var(--rule);
   box-shadow: 0 18px 24px -16px rgba(0, 0, 0, 0.95);
 }
@@ -320,7 +329,10 @@ a:hover {
 .terminal-head .topnav { margin-bottom: 0; }
 
 @media (max-width: 900px) {
-  .terminal-head { top: 18px; }
+  .terminal-head {
+    margin: -20px -22px 20px;
+    padding: 16px 22px 0;
+  }
 }
 
 /* Tables/data ----------------------------------------------- */
