@@ -57,11 +57,11 @@ export function AsciiBanner() {
 
   useEffect(() => {
     if (!hovered) return;
+    const overrides = overridesRef.current;
 
     const tick = () => {
       tickCountRef.current += 1;
       const now = tickCountRef.current;
-      const overrides = overridesRef.current;
 
       // 1. Drop expired overrides.
       for (const [idx, entry] of overrides) {
@@ -94,7 +94,7 @@ export function AsciiBanner() {
     const id = window.setInterval(tick, TICK_MS);
     return () => {
       window.clearInterval(id);
-      overridesRef.current.clear();
+      overrides.clear();
       tickCountRef.current = 0;
       setDisplayChars(ORIGINAL_CHARS);
     };
