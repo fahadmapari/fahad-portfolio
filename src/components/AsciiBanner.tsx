@@ -56,13 +56,7 @@ export function AsciiBanner() {
   };
 
   useEffect(() => {
-    if (!hovered) {
-      // Reset on hover-leave: clear overrides, snap back to clean banner.
-      overridesRef.current.clear();
-      tickCountRef.current = 0;
-      setDisplayChars(ORIGINAL_CHARS);
-      return;
-    }
+    if (!hovered) return;
 
     const tick = () => {
       tickCountRef.current += 1;
@@ -100,6 +94,9 @@ export function AsciiBanner() {
     const id = window.setInterval(tick, TICK_MS);
     return () => {
       window.clearInterval(id);
+      overridesRef.current.clear();
+      tickCountRef.current = 0;
+      setDisplayChars(ORIGINAL_CHARS);
     };
   }, [hovered]);
 
