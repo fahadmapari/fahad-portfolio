@@ -47,6 +47,8 @@ function App() {
   const [matrixOn, setMatrixOn] = useState(false);
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const isProgrammaticScrollRef = useRef(false);
+  const scrollReleaseRef = useRef<number | null>(null);
 
   // Global keys: ` toggles egg shell, Esc closes overlays in order
   useEffect(() => {
@@ -86,6 +88,8 @@ function App() {
     if (!root) return;
     const obs = new IntersectionObserver(
       (entries) => {
+        // Click-driven scrolls own the selection; IO must not override mid-animation.
+        if (isProgrammaticScrollRef.current) return;
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
@@ -108,6 +112,14 @@ function App() {
     const head = container.querySelector<HTMLElement>(".terminal-head");
     const offset = (head?.offsetHeight ?? 200) + 16;
     const delta = el.getBoundingClientRect().top - container.getBoundingClientRect().top;
+
+    isProgrammaticScrollRef.current = true;
+    if (scrollReleaseRef.current !== null) window.clearTimeout(scrollReleaseRef.current);
+    scrollReleaseRef.current = window.setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+      scrollReleaseRef.current = null;
+    }, 800);
+
     container.scrollTo({
       top: container.scrollTop + delta - offset,
       behavior: "smooth",
@@ -149,6 +161,7 @@ function App() {
                   key={s.id}
                   className={active === s.id ? "active" : ""}
                   onClick={() => {
+                    setActive(s.id);
                     scrollTo(s.id);
                     beep(900, 0.02, 0.04);
                   }}
