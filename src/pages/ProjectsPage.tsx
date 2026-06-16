@@ -4,6 +4,7 @@ import { Typewriter } from "../components/Typewriter";
 import { DataStream } from "../components/DataStream";
 import { PROJECTS, type Project } from "../data/projects";
 import { navigate } from "../lib/router";
+import { beep } from "../lib/sound";
 
 // ── Access Log animation ─────────────────────────────────────────
 function AccessLog({ project }: { project: Project }) {
@@ -108,9 +109,11 @@ function BrowserLayout() {
       if (e.key === "ArrowDown" || e.key === "j") {
         e.preventDefault();
         setSel((s) => Math.min(s + 1, PROJECTS.length - 1));
+        beep(880, 0.015, 0.03);
       } else if (e.key === "ArrowUp" || e.key === "k") {
         e.preventDefault();
         setSel((s) => Math.max(s - 1, 0));
+        beep(820, 0.015, 0.03);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -127,7 +130,7 @@ function BrowserLayout() {
           <button
             key={p.id}
             className={"pf-file" + (i === safeSel ? " active" : "")}
-            onClick={() => setSel(i)}
+            onClick={() => { setSel(i); beep(900, 0.02, 0.04); }}
           >
             <span className="fid">{p.id}</span>
             <span className="fname">{p.codename}</span>
@@ -177,6 +180,12 @@ function BrowserLayout() {
 export function ProjectsPage() {
   const [layout, setLayout] = useState<"grid" | "browser">("browser");
 
+  useEffect(() => {
+    const onClick = () => beep(640, 0.015, 0.025);
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+
   return (
     <>
       <div className="crt-bg" aria-hidden="true" />
@@ -213,13 +222,13 @@ export function ProjectsPage() {
             <div className="pf-toggle" role="tablist" aria-label="layout">
               <button
                 className={layout === "grid" ? "active" : ""}
-                onClick={() => setLayout("grid")}
+                onClick={() => { setLayout("grid"); beep(900, 0.02, 0.04); }}
               >
                 <span className="gl">▦</span>GRID DOSSIER
               </button>
               <button
                 className={layout === "browser" ? "active" : ""}
-                onClick={() => setLayout("browser")}
+                onClick={() => { setLayout("browser"); beep(900, 0.02, 0.04); }}
               >
                 <span className="gl">▤</span>FILE BROWSER
               </button>
